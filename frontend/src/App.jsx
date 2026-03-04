@@ -1,20 +1,25 @@
 import { useState } from "react";
 import CreatingPage from "./CreatingPage";
+import Login from "./Login";
 
 export default function App() {
-  const [showCreate, setShowCreate] = useState(false);
+  const [page, setPage] = useState("");
+
+   if(page === "create") return <CreatingPage />
+   if(page === "login") return <Login />
+
+
+
 
   return (
     <>
-      {showCreate ? (
-        <CreatingPage />
-      ) : (
+     
         <div className="min-h-screen bg-white flex flex-col">
         
           <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-[#E26338]">BROSTO</h1>
+            <h1 className="text-2xl font-bold text-[#E26338]">Quickart</h1>
 
-            <button className="text-sm font-medium text-gray-700 hover:text-[#E26338] transition">
+            <button onClick={()=> setPage("login")} className="text-sm font-medium text-gray-700 hover:text-[#E26338] transition">
               Login
             </button>
           </header>
@@ -33,7 +38,7 @@ export default function App() {
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
               <button
-                onClick={() => setShowCreate(true)}
+                onClick={() => setPage("create")}
                 className="bg-[#E26338] hover:bg-[#CF542C] text-white px-8 py-3 rounded-lg font-semibold shadow-sm transition"
               >
                 Get Started
@@ -47,11 +52,11 @@ export default function App() {
 
           {/* Footer */}
           <footer className="text-center text-sm text-gray-500 py-6">
-            © {new Date().getFullYear()} Brosto. All rights reserved.
+            © {new Date().getFullYear()} Quickart All rights reserved.
           </footer>
 
         </div>
-      )}
+    
     </>
   );
 }

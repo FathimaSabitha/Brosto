@@ -1,18 +1,28 @@
-import dotenv from "dotenv";
-dotenv.config();
+import app from "./app.js";
+import { connectDB } from "./config/db.js";
+import registerRoute from "./modules/auth/register.js";
+import productRoutes from "./modules/products/product.js";
+import userManagement from "./modules/users/user.js";
 
-import Fastify from "fastify";
 
-const app = Fastify({ logger: true });
+const start = async () => {
+  try {
+    await connectDB();
+    app.register(registerRoute, { prefix: "/auth" })
+    app.register(userManagement, { prefix: "/users" })
+    app.register(productRoutes, { prefix: "/products"})
 
-app.get("/health", async () => {
-  return { status: "ok", app: "brosto" };
-});
 
-app.listen({ port: process.env.PORT }, err => {
-  if (err) {
-    app.log.error(err);
+    await app.listen({
+      port: 5001,
+      host: "0.0.0.0",
+    });
+
+    console.log("🚀 Server running on 5000");
+  } catch (err) {
+    console.error(err);
     process.exit(1);
   }
-  console.log("🔥 Brosto backend running on port", process.env.PORT);
-});
+};
+
+start();
