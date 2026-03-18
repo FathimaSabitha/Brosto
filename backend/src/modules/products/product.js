@@ -2,8 +2,10 @@ import { ObjectId } from "mongodb";
 import { getDB } from "../../config/db.js";
 
 export default async function productRoutes(fastify) {
-    fastify.post("/add", { preHandler: [fastify.authenticate] }, async (req, reply) => {
-
+  fastify.post(
+    "/add",
+    { preHandler: [fastify.authenticate] },
+    async (req, reply) => {
       const db = getDB();
       const { name, price, description } = req.body;
 
@@ -12,7 +14,7 @@ export default async function productRoutes(fastify) {
       }
 
       const shopId = new ObjectId(req.user.shopId);
-      if(!shopId) {
+      if (!shopId) {
         return reply.code(400).send({ message: "ShopId required" });
       }
 
@@ -21,35 +23,99 @@ export default async function productRoutes(fastify) {
         price,
         description: description || "",
         shopId,
-        createdAt: new Date()
+        createdAt: new Date(),
       });
 
       return { success: true, productId: result.insertedId };
-    });
+    },
+  );
 
-    fastify.get(
-    "/shop/:slug",
+  fastify.get(
+    "/my-products",
+    { preHandler: [fastify.authenticate] },
     async (req, reply) => {
-
       const db = getDB();
-      const { slug } = req.params;
-
-      const shop = await db.collection("shops").findOne({ slug });
-
-      if (!shop) {
-        return reply.code(404).send({ message: "Shop not found" });
-      }
+      const shopId = new ObjectId(req.user.shopId);
 
       const products = await db
         .collection("products")
-        .find({ shopId: shop._id })
+        .find({ shopId })
         .toArray();
 
-      return {
-        shopName: shop.businessName,
-        products
+      return products;
+    },
+  );
+
+  fastify.put(
+    "/:id",
+    { preHandler: [fastify.authenticate] },
+    async (req, reply) => {
+      const db = getDB();
+      const { id } = req.params;
+      const { name, price, description } = req.body;
+
+      const shopId = new ObjectId(req.user.shopId);
+
+      const result = await db.collection("products").updateOne(
+        {
+          _id: new ObjectId(id),
+          shopId,
+        },
+        {
+          $set: { name, price, description },
+        },
+      );
+
+      if (!result.matchedCount) {
+        return reply.code(404).send({ message: "Product not found" });
       }
-    });
 
+      return { success: true };
+    },
+  );
 
+  fastify.delete(
+  "/:id",
+  { preHandler: [fastify.authenticate] },
+  async (req, reply) => {
+
+   const db = getDB()
+   const { id } = req.params;
+
+   const shopId = new ObjectId(req.user.shopId);
+
+   const result = await db.collection("products").deleteOne({
+    _id: new ObjectId(id),
+    shopId
+   })
+   if(!result.deletedCount) {
+    return reply.code(404).send({message: "Product not found" })
+   }
+
+    return { success: true };
+  }
+);
+
+  fastify.get("/shop/:slug", async (req, reply) => {
+    const db = getDB();
+    const { slug } = req.params;
+
+    const shop = await db.collection("shops").findOne({ slug });
+
+    if (!shop) {
+      return reply.code(404).send({ message: "Shop not found" });
+    }
+
+    const products = await db
+      .collection("products")
+      .find({ shopId: shop._id })
+      .toArray();
+
+    return {
+      shopName: shop.name,
+
+      //or shop.businessName
+      products,
+    };
+  });
 }
