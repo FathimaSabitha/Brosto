@@ -1,7 +1,31 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import API from "./api";
+
 
 const CreatingPage = () => {
   const [category, setCategory] = useState("");
+
+  const registerMutation = useMutation({
+  mutationFn: (data) => API.post("/auth/register", data),
+
+  onSuccess: () => {
+    alert("Account created");
+  },
+  onError: (err) => {
+    console.log(err);
+    alert("Something went wrong");
+  },
+});
+
+ const handleSubmit = (e) => {
+  e.preventDefault();
+
+  registerMutation.mutate({
+    ...form,
+    businessCategory: category,
+  });
+};
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">
@@ -110,6 +134,7 @@ const CreatingPage = () => {
           <button
             type="submit"
             className="w-full bg-[#E26338] hover:bg-[#CF542C] text-white py-2.5 rounded-lg font-semibold transition"
+            onClick={handleSubmit}
           >
             Create Account
           </button>
