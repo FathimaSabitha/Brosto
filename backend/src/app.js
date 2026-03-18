@@ -4,7 +4,7 @@ import jwt from "@fastify/jwt";
 const app = fastify();
 
 app.register(jwt, {
-  secret: "supersecretkey" 
+  secret: process.env.JWT_SECRET
 });
 
 app.decorate("authenticate", async function (req, reply) {
