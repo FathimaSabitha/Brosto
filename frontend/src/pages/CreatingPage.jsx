@@ -1,36 +1,40 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import API from "./api";
-
+import API from "../api/api";
 
 const CreatingPage = () => {
-  const [category, setCategory] = useState("");
+  const [form, setForm] = useState({
+    businessName: "",
+    ownerName: "",
+    phone: "",
+    username: "",
+    password: "",
+    businessCategory: "",
+  });
 
   const registerMutation = useMutation({
-  mutationFn: (data) => API.post("/auth/register", data),
+    mutationFn: (data) => API.post("/auth/register", data),
 
-  onSuccess: () => {
-    alert("Account created");
-  },
-  onError: (err) => {
-    console.log(err);
-    alert("Something went wrong");
-  },
-});
-
- const handleSubmit = (e) => {
-  e.preventDefault();
-
-  registerMutation.mutate({
-    ...form,
-    businessCategory: category,
+    onSuccess: () => {
+      alert("Account created");
+    },
+    onError: (err) => {
+      console.log(err);
+      alert("Something went wrong");
+    },
   });
-};
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    registerMutation.mutate({
+      ...form,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
-
         {/* Title */}
         <h2 className="text-2xl font-bold text-gray-900 text-center">
           Create Your Business
@@ -40,7 +44,6 @@ const CreatingPage = () => {
         </p>
 
         <form className="mt-6 space-y-5">
-
           {/* Business Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -49,7 +52,10 @@ const CreatingPage = () => {
             <input
               type="text"
               placeholder="Sweet Bites Bakery"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-[#E26338]"
+              value={form.businessName}
+              onChange={(e) =>
+                setForm({ ...form, businessName: e.target.value })
+              }
             />
           </div>
 
@@ -61,6 +67,8 @@ const CreatingPage = () => {
             <input
               type="text"
               placeholder="Your Name"
+              value={form.ownerName}
+              onChange={(e) => setForm({ ...form, ownerName: e.target.value })}
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-[#E26338]"
             />
           </div>
@@ -73,6 +81,8 @@ const CreatingPage = () => {
             <input
               type="tel"
               placeholder="+91 9876543210"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-[#E26338]"
             />
           </div>
@@ -85,6 +95,8 @@ const CreatingPage = () => {
             <input
               type="text"
               placeholder="sweetbites"
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-[#E26338]"
             />
           </div>
@@ -97,6 +109,8 @@ const CreatingPage = () => {
             <input
               type="password"
               placeholder="••••••••"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-[#E26338]"
             />
           </div>
@@ -108,8 +122,10 @@ const CreatingPage = () => {
             </label>
 
             <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              value={form.businessCategory}
+              onChange={(e) =>
+                setForm({ ...form, businessCategory: e.target.value })
+              }
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-[#E26338]"
             >
               <option value="">Select Category</option>
@@ -121,7 +137,7 @@ const CreatingPage = () => {
               <option value="Other">Other</option>
             </select>
 
-            {category === "Other" && (
+            {form.businessCategory === "Other" && (
               <input
                 type="text"
                 placeholder="Please specify"
@@ -138,7 +154,6 @@ const CreatingPage = () => {
           >
             Create Account
           </button>
-
         </form>
       </div>
     </div>

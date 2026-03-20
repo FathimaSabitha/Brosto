@@ -40,23 +40,38 @@ export default async function registerRoute(fastify) {
     return { success: true };
   });
 
-  fastify.post("/login", async (req, reply) => {
-    const db = getDB();
-    const { username, password } = req.body;
+fastify.post("/login", async (req, reply) => {
+  const db = getDB();
+  const { username, password } = req.body;
 
-    const user = await db.collection("users").findOne({ username });
-    if (!user) return reply.code(401).send("Invalid credentials");
+  if (!username || !password) {
+    return reply.code(400).send({ message: "Missing fields" });
+  }
 
-    const match = await bcrypt.compare(password, user.passwordHash);
-    if (!match) return reply.code(401).send("Invalid credentials");
-
-    const token = fastify.jwt.sign({
-      userId: user._id,
-      shopId: user.shopId,
-    });
-
-    return { token };
+  const user = await db.collection("users").findOne({
+    username: username.toLowerCase(),
   });
+
+  if (!user) {
+    return reply.code(401).send({ message: "Invalid credentials" });
+  }
+
+  const match = await bcrypt.compare(password, user.passwordHash);
+
+  if (!match) {
+    return reply.code(401).send({ message: "Invalid credentials" });
+  }
+
+  const token = fastify.jwt.sign(
+    {
+      userId: user._id.toString(),
+      shopId: user.shopId,
+    },
+    { expiresIn: "7d" }
+  );
+
+  return { token };
+});
 
   // fastify.get("/shop/:slug", async (req, reply) => {
   //   const db = getDB();
