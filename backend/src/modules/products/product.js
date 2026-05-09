@@ -2,26 +2,41 @@ import { ObjectId } from "mongodb";
 import { getDB } from "../../config/db.js";
 
 export default async function productRoutes(fastify) {
+  const db = getDB();
   fastify.post(
     "/add",
     { preHandler: [fastify.authenticate] },
     async (req, reply) => {
-      const db = getDB();
-      const { name, price, description } = req.body;
+      const parts = req.parts();
+      let name,
+        price,
+        description,
+        imageBuffer = null;
+
+      for await (const part of parts) {
+        if (part.type === "file") {
+          imageBuffer = await part.toBuffer();
+        } else {
+          if (part.fieldname === "name") name = part.value;
+          if (part.fieldname === "price") price = Number(part.value);
+          if (part.fieldname === "description") description = part.value;
+        }
+      }
 
       if (!name || !price) {
         return reply.code(400).send({ message: "Name and price required" });
       }
-
       const shopId = new ObjectId(req.user.shopId);
       if (!shopId) {
         return reply.code(400).send({ message: "ShopId required" });
       }
+      const image = imageBuffer ? imageBuffer.toString("base64") : "";
 
       const result = await db.collection("products").insertOne({
         name,
         price,
         description: description || "",
+        image,
         shopId,
         createdAt: new Date(),
       });
@@ -31,10 +46,20 @@ export default async function productRoutes(fastify) {
   );
 
   fastify.get(
+    "/header",
+    { preHandler: [fastify.authenticate] },
+    async (req, reply) => {
+      const shopId = new ObjectId(req.user.shopId);
+
+      const data = await db.collection("users").find({ shopId }).toArray();
+      return data;
+    },
+  );
+
+  fastify.get(
     "/my-products",
     { preHandler: [fastify.authenticate] },
     async (req, reply) => {
-      const db = getDB();
       const shopId = new ObjectId(req.user.shopId);
 
       const products = await db
@@ -50,11 +75,34 @@ export default async function productRoutes(fastify) {
     "/:id",
     { preHandler: [fastify.authenticate] },
     async (req, reply) => {
-      const db = getDB();
       const { id } = req.params;
-      const { name, price, description } = req.body;
+      const parts = req.parts();
+      let name,
+        price,
+        description,
+        imageBuffer = null;
+
+      for await (const part of parts) {
+        if (part.type === "file") {
+          imageBuffer = await part.toBuffer();
+        } else {
+          if (part.fieldname === "name") name = part.value;
+          if (part.fieldname === "price") price = Number(part.value);
+          if (part.fieldname === "description") description = part.value;
+        }
+      }
 
       const shopId = new ObjectId(req.user.shopId);
+
+       const updateData = {
+      name,
+      price,
+      description,
+    };
+
+    if (imageBuffer) {
+      updateData.image = imageBuffer.toString("base64");
+    }
 
       const result = await db.collection("products").updateOne(
         {
@@ -62,7 +110,7 @@ export default async function productRoutes(fastify) {
           shopId,
         },
         {
-          $set: { name, price, description },
+          $set: updateData,
         },
       );
 
@@ -75,29 +123,26 @@ export default async function productRoutes(fastify) {
   );
 
   fastify.delete(
-  "/:id",
-  { preHandler: [fastify.authenticate] },
-  async (req, reply) => {
+    "/:id",
+    { preHandler: [fastify.authenticate] },
+    async (req, reply) => {
+      const { id } = req.params;
 
-   const db = getDB()
-   const { id } = req.params;
+      const shopId = new ObjectId(req.user.shopId);
 
-   const shopId = new ObjectId(req.user.shopId);
+      const result = await db.collection("products").deleteOne({
+        _id: new ObjectId(id),
+        shopId,
+      });
+      if (!result.deletedCount) {
+        return reply.code(404).send({ message: "Product not found" });
+      }
 
-   const result = await db.collection("products").deleteOne({
-    _id: new ObjectId(id),
-    shopId
-   })
-   if(!result.deletedCount) {
-    return reply.code(404).send({message: "Product not found" })
-   }
-
-    return { success: true };
-  }
-);
+      return { success: true };
+    },
+  );
 
   fastify.get("/shop/:slug", async (req, reply) => {
-    const db = getDB();
     const { slug } = req.params;
 
     const shop = await db.collection("shops").findOne({ slug });
